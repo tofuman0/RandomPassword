@@ -5,21 +5,21 @@ the hardcoded strings.<br />
 <br />
 basic json file structure:<br />
 {<br />
-	"digits" : 3,<br />
-	"first" : [<br />
-		"firstwords",<br />
-		"..."<br />
-	],<br />
-	"second" : [<br />
-		"secondwords",<br />
-		"..."<br />
-	],<br />
-	"symbols" : [<br />
-		"!",<br />
-		"?",<br />
-		"%",<br />
-		"#"<br />
-	]<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;"digits" : 3,<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;"first" : [<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;	&nbsp;&nbsp;&nbsp;&nbsp;"firstwords",<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;	&nbsp;&nbsp;&nbsp;&nbsp;"..."<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;],<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;"second" : [<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;	&nbsp;&nbsp;&nbsp;&nbsp;"secondwords",<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;	&nbsp;&nbsp;&nbsp;&nbsp;"..."<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;],<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;"symbols" : [<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;	&nbsp;&nbsp;&nbsp;&nbsp;"!",<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;	&nbsp;&nbsp;&nbsp;&nbsp;"?",<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;	&nbsp;&nbsp;&nbsp;&nbsp;"%",<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;	&nbsp;&nbsp;&nbsp;&nbsp;"#"<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;]<br />
 }<br />
 <br />
 Command line options:<br />
@@ -32,19 +32,19 @@ no switches return a single password.<br />
 <br />
 Example:<br />
 Return 1 password:<br />
-	randompassword<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;randompassword<br />
 <br />
 Return 100 passwords:<br />
-	randompassword -n 100<br />
-	<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;randompassword -n 100<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;<br />
 Return 10 passwords in lowercase:<br />
-	randompassword -n 10 -lower<br />
-	<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;randompassword -n 10 -lower<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;<br />
 Return 10 passwords with no digits:<br />
-	randompassword -n 10 -d 0<br />
-	<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;randompassword -n 10 -d 0<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;<br />
 Return office 365 password format:<br />
-	randompassword -t o365<br />
-	<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;randompassword -t o365<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;<br />
 Return gibberish password 16 in length:<br />
-	randompassword -t gibberish -l 16<br />
+	&nbsp;&nbsp;&nbsp;&nbsp;randompassword -t gibberish -l 16<br />
