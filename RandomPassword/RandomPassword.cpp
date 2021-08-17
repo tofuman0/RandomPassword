@@ -128,7 +128,8 @@ int main(int argc, char* argv[])
             jsonfile >> json;
             jsonfile.close();
 
-            digits = json["digits"].get<int>();
+            if(digits == 3)
+                digits = json["digits"].get<int>();
             for (auto& jsonFirstEntry : json["first"])
             {
                 jsonFirst.push_back(jsonFirstEntry);
