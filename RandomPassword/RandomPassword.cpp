@@ -8,6 +8,7 @@ int main(int argc, char* argv[])
     uint32_t digits = 3;
     uint32_t digitsValue = 0;
     uint32_t digitsOffset = 0;
+    bool digitOverride = false;
     uint32_t length = 8;
     uint32_t seed = (uint32_t)time(NULL);
     bool toUpper = true;
@@ -151,6 +152,7 @@ int main(int argc, char* argv[])
                 else if (getCount > 6)
                 getCount = 6;
                 digits = getCount;
+                digitOverride = true;
                 i++;
             }
             else if ((strcmp(argv[i], "-lower") == 0 || strcmp(argv[i], "/lower") == 0) && argc > 1)
@@ -168,7 +170,8 @@ int main(int argc, char* argv[])
             jsonfile >> json;
             jsonfile.close();
 
-            digits = json["digits"].get<int>();
+            if(digitOverride == false)
+                digits = json["digits"].get<int>();
             for (auto& jsonFirstEntry : json["first"])
             {
                 jsonFirst.push_back(jsonFirstEntry);
