@@ -1,14 +1,6 @@
 #include "RandomPassword.h"
-#include <iostream>
-#include <time.h>
-#include <fstream>
 #include "json.h"
-
-const enum class PW_TYPE {
-    STANDARD,
-    O365,
-    GIBBERISH
-};
+#include "resource.h"
 
 int main(int argc, char* argv[])
 {
@@ -21,6 +13,7 @@ int main(int argc, char* argv[])
     bool toUpper = true;
     bool jsonLoaded = false;
     PW_TYPE pwType = PW_TYPE::STANDARD;
+    std::string customString;
     std::string jsonFileName = "randompassword.json";
     
     if (argc > 0)
@@ -29,20 +22,42 @@ int main(int argc, char* argv[])
         {
             if (strcmp(argv[i], "-?") == 0 || strcmp(argv[i], "/?") == 0)
             {
-                std::cout << std::endl << "Usage: randompassword [-n count] [-s seed] [-j jsonfile] [[-t type] [-l length] | [-lower] [-d count] | [-generatejson]]" << std::endl << std::endl;
-                std::cout << "Options:" << std::endl;
-                std::cout << "    -n count          Number of passwords to generate." << std::endl;
-                std::cout << "    -t type           Types: standard, o365, gibberish." << std::endl;
-                std::cout << "                      O365 password (3 letters 5 numbers)." << std::endl;
-                std::cout << "                      Gibberish password (Random characters)." << std::endl;
-                std::cout << "                      (this switch will cause -lower and -d switches to be ignored)." << std::endl;
-                std::cout << "    -l length         Length of gibberish password." << std::endl;
-                std::cout << "    -lower            Passwords to be all lowercase." << std::endl;
-                std::cout << "    -d count          Digit count in password. (6 limit)." << std::endl;
-                std::cout << "    -s seed           RNG Seed. Uses time by default." << std::endl;
-                std::cout << "    -j jsonfile       Specify a JSON file to use instead of the default \"randompassword.json\"." << std::endl;
-                std::cout << "    -generatejson     Generates a default JSON file." << std::endl;
-                std::cout << std::endl;
+                if (argc == 3 && strcmp(argv[i + 1], "custom") == 0)
+                {
+                    std::cout << "Custom password:" << std::endl;
+                    std::cout << "    Custom password allows you to specify a random password based on specified expression." << std::endl;
+                    std::cout << "    Similar to regular expressions. This type ignores length, lower and d switches." << std::endl;
+                    std::cout << std::endl;
+                    std::cout << "    Usage: randompassword -t custom \"EXPR\"" << std::endl;
+                    std::cout << "        [x-x]        Range of characters e.g. [0-9],[a-z],[a-Z]." << std::endl;
+                    std::cout << "        [x]          Type of characters e.g. [vowel],[consonant],[symbol]." << std::endl;
+                    std::cout << "        [word1]      Random word from first array." << std::endl;
+                    std::cout << "        [word2]      Random word from second array." << std::endl;
+                    std::cout << "        x            literial character e.g. abc" << std::endl;
+                    std::cout << "        {x}          Character count of range e.g. {3}." << std::endl;
+                    std::cout << std::endl;
+                    std::cout << "    Example: randompassword -t custom \"PASS[a-z]{4}[0-9]{2}WORD2021[symbol]\"" << std::endl;
+                    std::cout << "             Could generate a password of: PASSegis39WORD2021!" << std::endl;
+                    std::cout << std::endl;
+                }
+                else
+                {
+                    std::cout << std::endl << "Usage: randompassword [-n count] [-s seed] [-j jsonfile] [[-t type] [-l length] | [-lower] [-d count] | [-generatejson]]" << std::endl << std::endl;
+                    std::cout << "Options:" << std::endl;
+                    std::cout << "    -n count          Number of passwords to generate." << std::endl;
+                    std::cout << "    -t type           Types: standard, o365, gibberish, custom." << std::endl;
+                    std::cout << "                      O365 password (3 letters 5 numbers)." << std::endl;
+                    std::cout << "                      Gibberish password (Random characters)." << std::endl;
+                    std::cout << "                      Custom password (simlar to regex use -? custom for further help)." << std::endl;
+                    std::cout << "                      (this switch will cause -lower and -d switches to be ignored)." << std::endl;
+                    std::cout << "    -l length         Length of gibberish password." << std::endl;
+                    std::cout << "    -lower            Passwords to be all lowercase." << std::endl;
+                    std::cout << "    -d count          Digit count in password. (6 limit)." << std::endl;
+                    std::cout << "    -s seed           RNG Seed. Uses time by default." << std::endl;
+                    std::cout << "    -j jsonfile       Specify a JSON file to use instead of the default \"randompassword.json\"." << std::endl;
+                    std::cout << "    -generatejson     Generates a default JSON file." << std::endl;
+                    std::cout << std::endl;
+                }
                 return 0;
             }
             else if ((strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "/n") == 0) && argc > 2)
@@ -60,6 +75,19 @@ int main(int argc, char* argv[])
                     pwType = PW_TYPE::O365;
                 else if (strcmp(argv[i + 1], "gibberish") == 0)
                     pwType = PW_TYPE::GIBBERISH;
+                else if (strcmp(argv[i + 1], "custom") == 0)
+                {
+                    if (i + 2 <= argc)
+                    {
+                        customString = argv[i + 2];
+                        pwType = PW_TYPE::CUSTOM;
+                    }
+                    else
+                    {
+                        std::cout << "ERROR syntax error with custom password type." << std::endl;
+                        return 1;
+                    }
+                }
                 else
                     pwType = PW_TYPE::STANDARD;
             }
@@ -85,13 +113,29 @@ int main(int argc, char* argv[])
             }
             else if ((strcmp(argv[i], "-generatejson") == 0 || strcmp(argv[i], "/generatejson") == 0) && argc == 2)
             {
-                std::ofstream jsonFile("randompassword.json", std::ofstream::trunc);
+                std::ofstream jsonFile("randompassword.json", std::ofstream::binary | std::ofstream::trunc);
                 if (jsonFile)
                 {
-                    jsonFile << DefaultJSON;
-                    jsonFile.close();
-                    std::cout << "randompassword.json created." << std::endl;
-                    return 0;
+                    HRSRC res = FindResource(NULL, MAKEINTRESOURCE(IDR_JSON), L"JSON");
+                    if (res)
+                    {
+                        HGLOBAL DefaultJSONFile = LoadResource(NULL, res);
+                        LPVOID DefaultJSONFilePtr = LockResource(DefaultJSONFile);
+                        size_t DefaultJSONSize = SizeofResource(NULL, res);
+                        char* DefaultJSON = new char[DefaultJSONSize + 1];
+                        memcpy(DefaultJSON, DefaultJSONFilePtr, DefaultJSONSize);
+                        DefaultJSON[DefaultJSONSize] = 0;
+                        jsonFile << DefaultJSON;
+                        jsonFile.close();
+                        delete[] DefaultJSON;
+                        std::cout << "randompassword.json created." << std::endl;
+                        return 0;
+                    }
+                    else
+                    {
+                        std::cout << "ERROR creating randompassword.json." << std::endl;
+                        return 1;
+                    }
                 }
                 else
                 {
@@ -115,10 +159,6 @@ int main(int argc, char* argv[])
             }
         }
     }
-
-    std::vector<std::string> jsonFirst;
-    std::vector<std::string> jsonSecond;
-    std::vector<std::string> jsonSymbols;
 
     std::ifstream jsonfile(jsonFileName, std::ifstream::binary);
     if (jsonfile)
@@ -202,6 +242,11 @@ int main(int argc, char* argv[])
                 std::cout << (char)((rand() % 78) + 48);
             std::cout << std::endl;
         }
+        else if (pwType == PW_TYPE::CUSTOM)
+        {
+            GenerateCustomPasswords(customString, count, jsonLoaded);
+            std::cout << std::endl;
+        }
         else
         {
             if (jsonLoaded)
@@ -216,13 +261,13 @@ int main(int argc, char* argv[])
             }
             else
             {
-                first = rand() % (sizeof(FirstWords) / sizeof(const char*));
-                second = rand() % (sizeof(SecondWords) / sizeof(const char*));
+                first = rand() % (FirstWords.size());
+                second = rand() % (SecondWords.size());
                 third = rand();
-                fourth = rand() % (sizeof(Symbols) / sizeof(const char*));
-                strcpy_s(&strings[0][0], 100, FirstWords[first]);
-                strcpy_s(&strings[1][0], 100, SecondWords[second]);
-                strcpy_s(&strings[2][0], 100, Symbols[fourth]);
+                fourth = rand() % (Symbols.size());
+                strcpy_s(&strings[0][0], 100, FirstWords[first].c_str());
+                strcpy_s(&strings[1][0], 100, SecondWords[second].c_str());
+                strcpy_s(&strings[2][0], 100, Symbols[fourth].c_str());
             }
 
             if (digits)
