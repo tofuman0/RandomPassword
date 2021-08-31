@@ -1,10 +1,11 @@
 #pragma once
+#include "resource.h"
 #include <iostream>
 #include <time.h>
 #include <fstream>
 #include <Windows.h>
 #include <vector>
-
+#include <sstream>
 
 const enum class PW_TYPE {
 	STANDARD,
@@ -22,126 +23,15 @@ const enum class PW_ELEMENT_TYPE {
 	WORD1,
 	WORD2
 };
-std::vector<std::string> FirstWords{
-	"red",
-	"yellow",
-	"green",
-	"blue",
-	"orange",
-	"purple",
-	"pink"
-};
-std::vector<std::string> SecondWords{
-	"alligator",
-	"anaconda",
-	"aphid",
-	"badger",
-	"barracuda",
-	"bass",
-	"bat",
-	"bear",
-	"beaver",
-	"bee",
-	"beetle",
-	"bird",
-	"bobcat",
-	"buffalo",
-	"butterfly",
-	"buzzard",
-	"camel",
-	"caribou",
-	"carp",
-	"cat",
-	"caterpillar",
-	"catfish",
-	"cheetah",
-	"chicken",
-	"cobra",
-	"condor",
-	"cougar",
-	"coyote",
-	"cricket",
-	"crocodile",
-	"crow",
-	"deer",
-	"dinosaur",
-	"dolphin",
-	"dove",
-	"dragonfly",
-	"duck",
-	"eagle",
-	"elephant",
-	"emu",
-	"falcon",
-	"ferret",
-	"finch",
-	"fish",
-	"flamingo",
-	"fox",
-	"frog",
-	"goat",
-	"goose",
-	"gopher",
-	"gorilla",
-	"grasshopper",
-	"hamster",
-	"hare",
-	"hawk",
-	"horse",
-	"kangaroo",
-	"leopard",
-	"lion",
-	"lizard",
-	"llama",
-	"lobster",
-	"mongoose",
-	"monkey",
-	"moose",
-	"mosquito",
-	"mouse",
-	"octopus",
-	"orca",
-	"ostrich",
-	"otter",
-	"owl",
-	"oyster",
-	"panda",
-	"parrot",
-	"peacock",
-	"pelican",
-	"penguin",
-	"perch",
-	"pheasant",
-	"pigeon",
-	"quail",
-	"rabbit",
-	"raccoon",
-	"rat",
-	"rattlesnake",
-	"raven",
-	"rooster",
-	"sheep",
-	"shrew",
-	"skunk",
-	"snail",
-	"snake",
-	"spider",
-	"tiger",
-	"walrus",
-	"whale",
-	"wolf",
-	"zebra"
-};
-std::vector<std::string> Symbols {
-	"!",
-	"?",
-	"%",
-	"#"
+const enum class CASE_TYPE {
+	NA,
+	LOWER,
+	UPPER,
+	PROPER
 };
 std::vector<std::string> jsonFirst;
 std::vector<std::string> jsonSecond;
 std::vector<std::string> jsonSymbols;
-
 
 std::string toLower(std::string& in)
 {
@@ -165,7 +55,21 @@ std::string toUpper(std::string& in)
 	}
 	return uppercase;
 }
-std::vector<std::string> explode(std::string& in, const std::string& delimiter)
+std::string toProper(std::string& in)
+{
+	std::string propercase;
+	propercase.resize(in.length());
+	uint32_t i = 0;
+	for (i = 0; i < in.length(); i++)
+	{
+		if(i == 0)
+			propercase[i] = ::toupper(in[i]);
+		else
+			propercase[i] = ::tolower(in[i]);
+	}
+	return propercase;
+}
+std::vector<std::string> explode(std::string in, const std::string& delimiter)
 {
 	std::vector<std::string> tokens(0);
 	char* token = nullptr, * buffer = nullptr;
@@ -178,12 +82,30 @@ std::vector<std::string> explode(std::string& in, const std::string& delimiter)
 
 	return tokens;
 }
-void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
+bool GetInternalJSONPointer(LPVOID& BufferPtr, size_t& size)
+{
+	HRSRC res = FindResource(NULL, MAKEINTRESOURCE(IDR_JSON), L"JSON");
+	if (res)
+	{
+		HGLOBAL DefaultJSONFile = LoadResource(NULL, res);
+		if (DefaultJSONFile)
+		{
+			BufferPtr = LockResource(DefaultJSONFile);
+			size = SizeofResource(NULL, res);
+			return true;
+		}
+		else
+			return false;
+	}
+	else
+		return false;
+}
+void GenerateCustomPasswords(std::string& expr, uint32_t count)
 {
 	typedef struct stElement {
 		PW_ELEMENT_TYPE type;
 		std::string value;
-		bool uppercase;
+		CASE_TYPE casetype;
 		uint32_t count;
 	} Element;
 	std::vector<Element> elements;
@@ -201,7 +123,7 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 				Element thisElement = {
 						PW_ELEMENT_TYPE::LITERIAL,
 						token,
-						false,
+						CASE_TYPE::NA,
 						1
 				};
 				elements.push_back(thisElement);
@@ -230,7 +152,7 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 					Element thisElement = {
 						PW_ELEMENT_TYPE::VOWEL,
 						std::string(),
-						false,
+						CASE_TYPE::LOWER,
 						elementCount
 					};
 					elements.push_back(thisElement);
@@ -240,7 +162,7 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 					Element thisElement = {
 						PW_ELEMENT_TYPE::VOWEL,
 						std::string(),
-						true,
+						CASE_TYPE::UPPER,
 						elementCount
 					};
 					elements.push_back(thisElement);
@@ -250,7 +172,7 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 					Element thisElement = {
 						PW_ELEMENT_TYPE::CONSONANT,
 						std::string(),
-						false,
+						CASE_TYPE::LOWER,
 						elementCount
 					};
 					elements.push_back(thisElement);
@@ -260,7 +182,7 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 					Element thisElement = {
 						PW_ELEMENT_TYPE::CONSONANT,
 						std::string(),
-						true,
+						CASE_TYPE::UPPER,
 						elementCount
 					};
 					elements.push_back(thisElement);
@@ -270,7 +192,7 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 					Element thisElement = {
 						PW_ELEMENT_TYPE::SYMBOL,
 						std::string(),
-						false,
+						CASE_TYPE::NA,
 						elementCount
 					};
 					elements.push_back(thisElement);
@@ -280,7 +202,17 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 					Element thisElement = {
 						PW_ELEMENT_TYPE::WORD1,
 						std::string(),
-						false,
+						CASE_TYPE::LOWER,
+						elementCount
+					};
+					elements.push_back(thisElement);
+				}
+				else if (element == "Word1")
+				{
+					Element thisElement = {
+						PW_ELEMENT_TYPE::WORD1,
+						std::string(),
+						CASE_TYPE::PROPER,
 						elementCount
 					};
 					elements.push_back(thisElement);
@@ -290,7 +222,7 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 					Element thisElement = {
 						PW_ELEMENT_TYPE::WORD1,
 						std::string(),
-						true,
+						CASE_TYPE::UPPER,
 						elementCount
 					};
 					elements.push_back(thisElement);
@@ -300,7 +232,17 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 					Element thisElement = {
 						PW_ELEMENT_TYPE::WORD2,
 						std::string(),
-						false,
+						CASE_TYPE::LOWER,
+						elementCount
+					};
+					elements.push_back(thisElement);
+				}
+				else if (element == "Word2")
+				{
+					Element thisElement = {
+						PW_ELEMENT_TYPE::WORD2,
+						std::string(),
+						CASE_TYPE::PROPER,
 						elementCount
 					};
 					elements.push_back(thisElement);
@@ -310,7 +252,7 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 					Element thisElement = {
 						PW_ELEMENT_TYPE::WORD2,
 						std::string(),
-						true,
+						CASE_TYPE::UPPER,
 						elementCount
 					};
 					elements.push_back(thisElement);
@@ -324,7 +266,7 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 							Element thisElement = {
 								PW_ELEMENT_TYPE::ALPHA,
 								element,
-								false,
+								CASE_TYPE::NA,
 								elementCount
 							};
 							elements.push_back(thisElement);
@@ -334,7 +276,7 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 							Element thisElement = {
 								PW_ELEMENT_TYPE::NUMERIC,
 								element,
-								false,
+								CASE_TYPE::NA,
 								elementCount
 							};
 							elements.push_back(thisElement);
@@ -349,7 +291,7 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 			Element thisElement = {
 				PW_ELEMENT_TYPE::LITERIAL,
 				token,
-				false,
+				CASE_TYPE::NA,
 				1
 			};
 			elements.push_back(thisElement);
@@ -357,10 +299,12 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 		}
 	}
 
-	for (auto& element : elements)
+	for (uint32_t i = 0; i < count; i++)
 	{
-		switch (element.type)
+		for (auto& element : elements)
 		{
+			switch (element.type)
+			{
 			case PW_ELEMENT_TYPE::ALPHA:
 			{
 				char alpha[]{ 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' };
@@ -406,7 +350,7 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 			{
 				char vowels[]{ 'a', 'e', 'i', 'o', 'u' };
 				for (uint32_t i = 0; i < element.count; i++)
-					std::cout << (char)(element.uppercase ? vowels[rand() % sizeof(vowels)] - 32 : vowels[rand() % sizeof(vowels)]);
+					std::cout << (char)((element.casetype == CASE_TYPE::UPPER) ? vowels[rand() % sizeof(vowels)] - 32 : vowels[rand() % sizeof(vowels)]);
 				break;
 			}
 			case PW_ELEMENT_TYPE::CONSONANT:
@@ -414,23 +358,14 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 				char consonants[]{ 'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z' };
 
 				for (uint32_t i = 0; i < element.count; i++)
-					std::cout << (char)(element.uppercase ? consonants[rand() % sizeof(consonants)] - 32 : consonants[rand() % sizeof(consonants)]);
+					std::cout << (char)((element.casetype == CASE_TYPE::UPPER) ? consonants[rand() % sizeof(consonants)] - 32 : consonants[rand() % sizeof(consonants)]);
 				break;
 			}
 			case PW_ELEMENT_TYPE::SYMBOL:
 			{
-				if (usejson)
-				{
-					for (uint32_t i = 0; i < element.count; i++)
-						std::cout << jsonSymbols[rand() % jsonSymbols.size()];
-					break;
-				}
-				else
-				{
-					for (uint32_t i = 0; i < element.count; i++)
-						std::cout << Symbols[rand() % Symbols.size()];
-					break;
-				}
+				for (uint32_t i = 0; i < element.count; i++)
+					std::cout << jsonSymbols[rand() % jsonSymbols.size()];
+				break;
 			}
 			case PW_ELEMENT_TYPE::LITERIAL:
 			{
@@ -440,52 +375,60 @@ void GenerateCustomPasswords(std::string& expr, uint32_t count, bool usejson)
 			}
 			case PW_ELEMENT_TYPE::WORD1:
 			{
-				if (usejson)
+				for (uint32_t i = 0; i < element.count; i++)
 				{
-					for (uint32_t i = 0; i < element.count; i++)
+					std::string word;
+					switch (element.casetype)
 					{
-						std::string word = element.uppercase ? toUpper(jsonFirst[rand() % jsonFirst.size()]) : jsonFirst[rand() % jsonFirst.size()];
-						std::cout << word;
+					case CASE_TYPE::LOWER:
+						word = jsonFirst[rand() % jsonFirst.size()];
+						break;
+					case CASE_TYPE::UPPER:
+						word = toUpper(jsonFirst[rand() % jsonFirst.size()]);
+						break;
+					case CASE_TYPE::PROPER:
+						word = toProper(jsonFirst[rand() % jsonFirst.size()]);
+						break;
+					default:
+						word = jsonFirst[rand() % jsonFirst.size()];
+						break;
 					}
-					break;
+					std::cout << word;
 				}
-				else
-				{
-					for (uint32_t i = 0; i < element.count; i++)
-					{
-						std::string word = element.uppercase ? toUpper(FirstWords[rand() % FirstWords.size()]) : FirstWords[rand() % FirstWords.size()];
-						std::cout << word;
-					}
-					break;
-				}
+				break;
 			}
 			case PW_ELEMENT_TYPE::WORD2:
 			{
-				if (usejson)
+				for (uint32_t i = 0; i < element.count; i++)
 				{
-					for (uint32_t i = 0; i < element.count; i++)
+					std::string word;
+					switch (element.casetype)
 					{
-						std::string word = element.uppercase ? toUpper(jsonSecond[rand() % jsonSecond.size()]) : jsonSecond[rand() % jsonSecond.size()];
-						std::cout << word;
+					case CASE_TYPE::LOWER:
+						word = jsonSecond[rand() % jsonSecond.size()];
+						break;
+					case CASE_TYPE::UPPER:
+						word = toUpper(jsonSecond[rand() % jsonSecond.size()]);
+						break;
+					case CASE_TYPE::PROPER:
+						word = toProper(jsonSecond[rand() % jsonSecond.size()]);
+						break;
+					default:
+						word = jsonSecond[rand() % jsonSecond.size()];
+						break;
 					}
-					break;
+					std::cout << word;
 				}
-				else
-				{
-					for (uint32_t i = 0; i < element.count; i++)
-					{
-						std::string word = element.uppercase ? toUpper(SecondWords[rand() % SecondWords.size()]) : SecondWords[rand() % SecondWords.size()];
-						std::cout << word;
-					}
-					break;
-				}
+				break;
 			}
 			default:
 			{
-				for(uint32_t i = 0; i < element.count; i++)
+				for (uint32_t i = 0; i < element.count; i++)
 					std::cout << "?";
 				break;
 			}
+			}
 		}
+		std::cout << std::endl;
 	}
 }

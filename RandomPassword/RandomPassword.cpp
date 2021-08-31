@@ -1,13 +1,10 @@
 #include "RandomPassword.h"
 #include "json.h"
-#include "resource.h"
 
 int main(int argc, char* argv[])
 {
     uint32_t count = 1;
     uint32_t digits = 3;
-    uint32_t digitsValue = 0;
-    uint32_t digitsOffset = 0;
     bool digitOverride = false;
     uint32_t length = 8;
     uint32_t seed = (uint32_t)time(NULL);
@@ -32,13 +29,16 @@ int main(int argc, char* argv[])
                     std::cout << "    Usage: randompassword -t custom \"EXPR\"" << std::endl;
                     std::cout << "        [x-x]        Range of characters e.g. [0-9],[a-z],[a-Z]." << std::endl;
                     std::cout << "        [x]          Type of characters e.g. [vowel],[consonant],[symbol]." << std::endl;
-                    std::cout << "        [word1]      Random word from first array." << std::endl;
-                    std::cout << "        [word2]      Random word from second array." << std::endl;
+                    std::cout << "                     [VOWEL] and [CONSONANT] will produce an uppercase character." << std::endl;
+                    std::cout << "        [word1]      Random word from first array. word1 will produce an lowercase word" << std::endl;
+                    std::cout << "                     WORD1 an uppercase word and Word1 a propercase word." << std::endl;
+                    std::cout << "        [word2]      Random word from first array. word2 will produce an lowercase word" << std::endl;
+                    std::cout << "                     WORD2 an uppercase word and Word2 a propercase word." << std::endl;
                     std::cout << "        x            literial character e.g. abc" << std::endl;
                     std::cout << "        {x}          Character count of range e.g. {3}." << std::endl;
                     std::cout << std::endl;
-                    std::cout << "    Example: randompassword -t custom \"PASS[a-z]{4}[0-9]{2}WORD2021[symbol]\"" << std::endl;
-                    std::cout << "             Could generate a password of: PASSegis39WORD2021!" << std::endl;
+                    std::cout << "    Example: randompassword -t custom \"[symbol][a-z]{4}[A-Z]{3}[0-9]{2}-[a-Z]{4}[symbol][symbol]\"" << std::endl;
+                    std::cout << "             Could generate a password of: !efyrEKS48-GHsR?!" << std::endl;
                     std::cout << std::endl;
                 }
                 else
@@ -117,12 +117,10 @@ int main(int argc, char* argv[])
                 std::ofstream jsonFile("randompassword.json", std::ofstream::binary | std::ofstream::trunc);
                 if (jsonFile)
                 {
-                    HRSRC res = FindResource(NULL, MAKEINTRESOURCE(IDR_JSON), L"JSON");
-                    if (res)
+                    LPVOID DefaultJSONFilePtr = nullptr;
+                    size_t DefaultJSONSize = 0;
+                    if (GetInternalJSONPointer(DefaultJSONFilePtr, DefaultJSONSize) == true && DefaultJSONSize > 0)
                     {
-                        HGLOBAL DefaultJSONFile = LoadResource(NULL, res);
-                        LPVOID DefaultJSONFilePtr = LockResource(DefaultJSONFile);
-                        size_t DefaultJSONSize = SizeofResource(NULL, res);
                         char* DefaultJSON = new char[DefaultJSONSize + 1];
                         memcpy(DefaultJSON, DefaultJSONFilePtr, DefaultJSONSize);
                         DefaultJSON[DefaultJSONSize] = 0;
@@ -193,101 +191,84 @@ int main(int argc, char* argv[])
             std::cout << "Error: " << ex.what() << std::endl;
         }
     }
+    else
+    {
+        LPVOID DefaultJSONFilePtr = nullptr;
+        size_t DefaultJSONSize = 0;
+        if (GetInternalJSONPointer(DefaultJSONFilePtr, DefaultJSONSize) == true)
+        {
+            if (DefaultJSONSize > 0 && DefaultJSONFilePtr != nullptr)
+            {
+                char* DefaultJSON = new char[DefaultJSONSize + 1];
+                memcpy(DefaultJSON, DefaultJSONFilePtr, DefaultJSONSize);
+                DefaultJSON[DefaultJSONSize] = 0;
+                try {
+                    std::stringstream ss(std::string(DefaultJSON, DefaultJSONSize));
+                    nlohmann::json json;
+                    ss >> json;
 
-    switch (digits)
-    {
-    case 1:
-        digitsValue = 10;
-        digitsOffset = 0;
-        break;
-    case 2:
-        digitsValue = 90;
-        digitsOffset = 10;
-        break;
-    case 3:
-        digitsValue = 900;
-        digitsOffset = 100;
-        break;
-    case 4:
-        digitsValue = 9000;
-        digitsOffset = 1000;
-        break;
-    case 5:
-        digitsValue = 90000;
-        digitsOffset = 10000;
-        break;
-    case 6:
-        digitsValue = 900000;
-        digitsOffset = 100000;
-        break;
-    default:
-        digitsValue = 0;
-        digitsOffset = 0;
-        break;
+                    if (digitOverride == false)
+                        digits = json["digits"].get<int>();
+                    for (auto& jsonFirstEntry : json["first"])
+                    {
+                        jsonFirst.push_back(jsonFirstEntry);
+                    }
+                    for (auto& jsonSecondEntry : json["second"])
+                    {
+                        jsonSecond.push_back(jsonSecondEntry);
+                    }
+                    for (auto& jsonSymbolsEntry : json["symbols"])
+                    {
+                        jsonSymbols.push_back(jsonSymbolsEntry);
+                    }
+
+                    if (jsonFirst.size() > 0 && jsonSecond.size() > 0 && jsonSymbols.size() > 0)
+                        jsonLoaded = true;
+                }
+                catch (nlohmann::json::exception ex)
+                {
+                    std::cout << "Error: " << ex.what() << std::endl;
+                    delete[] DefaultJSON;
+                }
+                delete[] DefaultJSON;
+            }
+        }
     }
+
     srand(seed);
-    for (uint32_t i = 0; i < count; i++)
+
     {
-        uint32_t first = 0;
-        uint32_t second = 0;
-        uint32_t third = 0;
-        uint32_t fourth = 0;
-        char strings[3][100] = { 0 };
         if (pwType == PW_TYPE::O365)
         {
-            char vowels[]{ 'a', 'e', 'i', 'o', 'u' };
-            char consonants[]{ 'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z' };
-            std::cout << (char)(consonants[rand() % sizeof(consonants)] - 32) << (char)(vowels[(rand() % sizeof(vowels))]) << (char)(consonants[rand() % sizeof(consonants)]) << (rand() % 10) << (rand() % 10) << (rand() % 10) << (rand() % 10) << (rand() % 10) << "\n";
+            std::string expr = "[CONSONANT][vowel][consonant][0-9]{5}";
+            GenerateCustomPasswords(expr, count);
         }
         else if (pwType == PW_TYPE::GIBBERISH)
         {
-            for(uint32_t i = 0; i < length; i++)
-                std::cout << (char)((rand() % 78) + 48);
-            std::cout << std::endl;
+            for (uint32_t i = 0; i < count; i++)
+            {
+                for (uint32_t j = 0; j < length; j++)
+                    std::cout << (char)((rand() % 78) + 48);
+                std::cout << std::endl;
+            }
         }
         else if (pwType == PW_TYPE::CUSTOM)
         {
-            GenerateCustomPasswords(customString, count, jsonLoaded);
-            std::cout << std::endl;
+            GenerateCustomPasswords(customString, count);
         }
         else
         {
-            if (jsonLoaded)
-            {
-                first = rand() % (jsonFirst.size());
-                second = rand() % (jsonSecond.size());
-                third = rand();
-                fourth = rand() % (jsonSymbols.size());
-                strcpy_s(&strings[0][0], 100, jsonFirst[first].c_str());
-                strcpy_s(&strings[1][0], 100, jsonSecond[second].c_str());
-                strcpy_s(&strings[2][0], 100, jsonSymbols[fourth].c_str());
-            }
-            else
-            {
-                first = rand() % (FirstWords.size());
-                second = rand() % (SecondWords.size());
-                third = rand();
-                fourth = rand() % (Symbols.size());
-                strcpy_s(&strings[0][0], 100, FirstWords[first].c_str());
-                strcpy_s(&strings[1][0], 100, SecondWords[second].c_str());
-                strcpy_s(&strings[2][0], 100, Symbols[fourth].c_str());
-            }
-
-            if (digits)
-            {
-                third %= digitsValue;
-                third += digitsOffset;
-            }
-
+            std::stringstream exprstream;
             if (toUpper)
             {
-                strings[0][0] = toupper(strings[0][0]);
-                strings[1][0] = toupper(strings[1][0]);
+                exprstream << "[Word1][Word2][0-9]{" << digits << "}[symbol]";
             }
-            if (digits)
-                std::cout << strings[0] << strings[1] << third << strings[2] << "\n";
             else
-                std::cout << strings[0] << strings[1] << strings[2] << "\n";
+            {
+                exprstream << "[word1][word2][0-9]{" << digits << "}[symbol]";
+            }
+            std::string expr = exprstream.str();
+            GenerateCustomPasswords(expr, count);
         }
     }
     return 0;
