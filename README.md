@@ -21,15 +21,41 @@ basic json file structure:<br />
 	&nbsp;&nbsp;&nbsp;&nbsp;	&nbsp;&nbsp;&nbsp;&nbsp;"#"<br />
 	&nbsp;&nbsp;&nbsp;&nbsp;]<br />
 }<br />
-<br />
-Command line options:<br />
-no switches return a single password.<br />
--n X: number of required passwords<br />
--lower: by default the first letter of each word is in upper case this disables that<br />
--d X: number of digits in passwords<br />
--t X: type of password. standard, o365, gibberish<br />
--l X: lenth of gibberish password<br />
-<br />
+````CommandLine
+Usage: randompassword [-n count] [-s seed] [-j jsonfile] [[-t type] [-l length] | [-lower] [-d count] | [-generatejson]]
+
+Options:
+    -n count          Number of passwords to generate.
+    -t type           Types: standard, o365, gibberish, custom.
+                      O365 password (3 letters 5 numbers).
+                      Gibberish password (Random characters).
+                      Custom password (simlar to regex use -? custom for further help).
+                      (this switch will cause -lower and -d switches to be ignored).
+    -l length         Length of gibberish password.
+    -lower            Passwords to be all lowercase.
+    -d count          Digit count in password. (6 limit).
+    -s seed           RNG Seed. Uses time by default.
+    -j jsonfile       Specify a JSON file to use instead of the default "randompassword.json".
+    -generatejson     Generates a default JSON file.
+
+Custom password:
+    Custom password allows you to specify a random password based on specified expression.
+    Similar to regular expressions. This type ignores length, lower and d switches.
+
+    Usage: randompassword -t custom "EXPR"
+        [x-x]        Range of characters e.g. [0-9],[a-z],[a-Z].
+        [x]          Type of characters e.g. [vowel],[consonant],[symbol].
+                     [VOWEL] and [CONSONANT] will produce an uppercase character.
+        [word1]      Random word from first array. word1 will produce an lowercase word
+                     WORD1 an uppercase word and Word1 a propercase word.
+        [word2]      Random word from first array. word2 will produce an lowercase word
+                     WORD2 an uppercase word and Word2 a propercase word.
+        x            literial character e.g. abc
+        {x}          Character count of range e.g. {3}.
+
+    Example: randompassword -t custom "[symbol][a-z]{4}[A-Z]{3}[0-9]{2}-[a-Z]{4}[symbol][symbol]"
+             Could generate a password of: !efyrEKS48-GHsR?!
+````
 Example:<br />
 Return 1 password:<br />
 	&nbsp;&nbsp;&nbsp;&nbsp;randompassword<br />
