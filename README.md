@@ -1,5 +1,5 @@
-#Random Password
-----------------
+Random Password
+---------------
 
 A basic command line random password generator<br />
 <br />
