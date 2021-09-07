@@ -29,7 +29,7 @@ Options:
     -t type           Types: standard, o365, gibberish, custom.
                       O365 password (3 letters 5 numbers).
                       Gibberish password (Random characters).
-                      Custom password (simlar to regex use -? custom for further help).
+                      Custom password (similar to regex use -? custom for further help).
                       (this switch will cause -lower and -d switches to be ignored).
     -l length         Length of gibberish password.
     -lower            Passwords to be all lowercase.
