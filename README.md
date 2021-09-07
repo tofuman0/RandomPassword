@@ -1,3 +1,4 @@
+#Random Password
 A basic command line random password generator<br />
 <br />
 It looks for "randompassword.json" in the same folder and if it exists it'll load the strings in that file instead of using<br />
