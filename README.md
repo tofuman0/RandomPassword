@@ -1,3 +1,5 @@
+[![MSBuild](https://github.com/tofuman0/RandomPassword/actions/workflows/msbuild.yml/badge.svg)](https://github.com/tofuman0/RandomPassword/actions/workflows/msbuild.yml)
+
 Random Password
 ---------------
 
